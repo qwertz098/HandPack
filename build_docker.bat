@@ -2,8 +2,8 @@
 rem =====================================================================
 rem  HandPack - Docker Image Build (Windows)
 rem  Baut das Linux-Container-Image (ffmpeg + noVNC-GUI) und taggt es
-rem  lokal mit Name + Version aus version.py. Fuer den Push zu einer
-rem  Registry siehe deploy_docker.bat.
+rem  lokal mit Name + Version aus version.py. Fertige Images gibt es
+rem  unter ghcr.io/qwertz098/handpack.
 rem =====================================================================
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
@@ -75,7 +75,6 @@ echo.
 echo Fertig: %TAG_VER%  (auch getaggt als %TAG_LATEST%)
 echo.
 echo Lokal starten:  docker compose up -d
-echo Zu Registry pushen:  deploy_docker.bat ^<registry-host:port^> %NAMESPACE%
 echo.
 pause
 endlocal
