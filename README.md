@@ -274,9 +274,9 @@ the source code. Easier: build the image + push it to a registry
 code needed on the server. Adjust `<REGISTRY>`/`<TAG>` (or the example
 values in the file) to your own registry address.
 
-### GPU Passthrough
+### GPU Passthrough (Unraid)
 Prepared commented-out in `docker-compose.yml` for:
-- **NVIDIA** – requires `nvidia-container-toolkit` on the Docker host;
+- **NVIDIA** – requires `nvidia-container-toolkit` on the Unraid host;
   find the GPU UUID with `nvidia-smi -L`, pin it via `device_ids` (MIG
   instances also supported)
 - **AMD / Intel** – passthrough of individual `/dev/dri/renderDXXX`
