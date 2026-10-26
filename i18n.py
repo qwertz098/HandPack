@@ -269,7 +269,7 @@ _DE: dict[str, str] = {
 
 _EN: dict[str, str] = {
     "window_title": _TITLE,
-    "lbl_target": "Target:",
+    "lbl_target": "Target resolution:",
     "lbl_crf": "CRF:",
     "lbl_encoder": "Encoder:",
     "lbl_video_mode": "Video:",
@@ -298,7 +298,7 @@ _EN: dict[str, str] = {
     "col_res": "Resolution",
     "col_crop_on": "Crop",
     "col_crop": "Crop value",
-    "col_target": "Target",
+    "col_target": "Target resolution",
     "col_hdr": "HDR",
     "col_audio": "Audio",
     "col_crf": "CRF",

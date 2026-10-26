@@ -1,5 +1,7 @@
 # HandPack (x265 / MKV)
 
+![HandPack main window](docs/screenshot.png)
+
 Single-window GUI for batch transcoding with ffmpeg.
 
 *(Deutsche Version: [README_DE.md](README_DE.md))*
