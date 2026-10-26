@@ -1,6 +1,7 @@
 services:
   handpack:
-    build: .
+    image: ghcr.io/qwertz098/handpack:latest
+    # build: .            # alternative: build locally from source
     ports:
       - "6080:6080"        # noVNC (browser access)
     environment:
@@ -25,6 +26,7 @@ services:
       #- /mnt/user/Serien:/input/serien     # input files
       #- /mnt/user/Downloads:/input/downloads     # input files
       #- /mnt/user/Downloads/_handpack_output:/output   # encoded output files
+      #- /mnt/user/appdata/handpack/config:/root/.config/Kristian   # settings (Unraid)
     restart: unless-stopped
     shm_size: 256mb        # Qt requires /dev/shm
 

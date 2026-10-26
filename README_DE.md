@@ -208,6 +208,16 @@ wird beim Start automatisch maximiert (`HANDPACK_MAXIMIZE=1`, siehe
 `docker/supervisord.conf`) und füllt damit die per `RESOLUTION` gesetzte
 virtuelle Auflösung.
 
+### Fertiges Image (GitHub Container Registry)
+Jeder Release-Tag (`v*`) wird von GitHub Actions gebaut und als
+`ghcr.io/qwertz098/handpack` veröffentlicht (`:<version>` und `:latest`):
+
+    docker pull ghcr.io/qwertz098/handpack:latest
+
+`docker-compose.yml` nutzt dieses Image bereits; die Datei lässt sich in
+jeden Stack-Manager (Portainer, Dockge, Unraid, ...) einfügen oder direkt
+mit `docker compose up -d` starten. Kein Quellcode auf dem Server nötig.
+
 ### Build (lokal, nur bauen)
     build_docker.bat [namespace]
 baut das Image lokal und taggt es mit Name/Version aus `version.py`
@@ -216,32 +226,7 @@ baut das Image lokal und taggt es mit Name/Version aus `version.py`
     build_docker.bat myuser
     → Image: myuser/handpack:0.1
 
-### Deploy (zu einer Registry pushen)
-    deploy_docker.bat <registry-host:port> [namespace]
-taggt das zuvor lokal gebaute Image für die Ziel-Registry um und pusht
-Version- + `latest`-Tag. Ohne Argument fragt das Skript die Registry-
-Adresse interaktiv ab. **Wichtig: Host UND Port angeben** (z. B.
-`registry.example:5000`) – ohne Port versucht Docker HTTPS auf 443 und
-schlägt mit „connection refused" fehl.
-
-Beispiel:
-    build_docker.bat myuser
-    deploy_docker.bat registry.example:5000 myuser
-
-**Voraussetzung bei einer HTTP-Registry ohne TLS** (Standard bei einer
-selbstgehosteten lokalen Registry): auf der Build-Maschine in Docker
-Desktop → Settings → Docker Engine das JSON ergänzen:
-```json
-{ "insecure-registries": ["registry.example:5000"] }
-```
-→ Apply & Restart.
-
-### Eigene Registry hosten (optional)
-`docker-compose.registry.yml` – Stack, der startet eine private
-Docker-Registry (`registry:2`) auf Port 5000. Optionaler Basic-Auth-Block
-ist auskommentiert enthalten. Nur im eigenen LAN einsetzen (kein TLS).
-
-### Start (lokal per Compose, mit lokalem Build)
+### Start (Compose)
     docker compose up -d
 Danach im Browser: **http://server-ip:6080/**
 
@@ -265,15 +250,6 @@ Optionen mit:
   löschen. Vor dieser Änderung geschriebene Dateien brauchen einmalig
   `chmod -R a+rw ./output`.
 - **GPU-Passthrough** (siehe unten)
-
-### Deployment aus einer Registry
-`build: .` im Compose funktioniert nur, wenn der Docker-Host Zugriff auf den
-Quellcode hat. Einfacher: Image bauen + zur Registry pushen
-(`build_docker.bat` + `deploy_docker.bat`, siehe oben) und in einer Docker-Oberfläche (z. B. Portainer, Dockge)
-`docker-compose.dockge.yml` als Stack einfügen – die nutzt bereits
-`image: <registry>/handpack:<tag>` statt `build: .`, kein Quellcode auf
-dem Server nötig. `<REGISTRY>`/`<TAG>` bzw. die Beispielwerte im File an
-die eigene Registry-Adresse anpassen.
 
 ### GPU-Passthrough (Unraid)
 In `docker-compose.yml` auskommentiert vorbereitet für:
