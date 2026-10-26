@@ -184,7 +184,7 @@ unter Linux/macOS MKVToolNix manuell installieren:
 
 ---
 
-## Docker-Deployment (Server, z. B. Unraid)
+## Docker-Deployment (Server)
 
 Die App läuft headless im Container und wird über **noVNC im Browser**
 bedient (kein X-Server auf dem Client nötig, kein SSH-Forwarding).
@@ -211,31 +211,31 @@ virtuelle Auflösung.
 baut das Image lokal und taggt es mit Name/Version aus `version.py`
 (z. B. `handpack:0.1` + `handpack:latest`). Optionaler Namespace:
 
-    build_docker.bat kristian
-    → Image: kristian/handpack:0.1
+    build_docker.bat myuser
+    → Image: myuser/handpack:0.1
 
 ### Deploy (zu einer Registry pushen)
     deploy_docker.bat <registry-host:port> [namespace]
 taggt das zuvor lokal gebaute Image für die Ziel-Registry um und pusht
 Version- + `latest`-Tag. Ohne Argument fragt das Skript die Registry-
 Adresse interaktiv ab. **Wichtig: Host UND Port angeben** (z. B.
-`192.168.178.222:5000`) – ohne Port versucht Docker HTTPS auf 443 und
+`registry.example:5000`) – ohne Port versucht Docker HTTPS auf 443 und
 schlägt mit „connection refused" fehl.
 
 Beispiel:
-    build_docker.bat kristian
-    deploy_docker.bat 192.168.178.222:5000 kristian
+    build_docker.bat myuser
+    deploy_docker.bat registry.example:5000 myuser
 
 **Voraussetzung bei einer HTTP-Registry ohne TLS** (Standard bei einer
 selbstgehosteten lokalen Registry): auf der Build-Maschine in Docker
 Desktop → Settings → Docker Engine das JSON ergänzen:
 ```json
-{ "insecure-registries": ["192.168.178.222:5000"] }
+{ "insecure-registries": ["registry.example:5000"] }
 ```
 → Apply & Restart.
 
 ### Eigene Registry hosten (optional)
-`docker-compose.registry.yml` – Stack für Dockge, startet eine private
+`docker-compose.registry.yml` – Stack, der startet eine private
 Docker-Registry (`registry:2`) auf Port 5000. Optionaler Basic-Auth-Block
 ist auskommentiert enthalten. Nur im eigenen LAN einsetzen (kein TLS).
 
@@ -247,7 +247,7 @@ Danach im Browser: **http://server-ip:6080/**
 Optionen mit:
 - **`RESOLUTION`** – virtuelle Bildschirmgröße (z. B. `1920x1080`)
 - **`./input` / `./output`** Volumes – zusätzliche Mount-Beispiele für
-  Unraid-Freigaben (`/mnt/user/...`) sind als Kommentare vorhanden
+  Beispiele für weitere Mounts sind als Kommentare vorhanden
 - **`./config:/root/.config/Kristian`** – speichert die App-Einstellungen
   (Zielauflösung, CRF, Encoder, Audio-/Video-Modus, Sprache, Tool-Pfade, …)
   dauerhaft über Container-Neuerstellung/Image-Updates hinweg. Ohne dieses
@@ -264,18 +264,18 @@ Optionen mit:
   `chmod -R a+rw ./output`.
 - **GPU-Passthrough** (siehe unten)
 
-### Deployment über Dockge
-`build: .` im Compose funktioniert nur, wenn Dockge Zugriff auf den
+### Deployment aus einer Registry
+`build: .` im Compose funktioniert nur, wenn der Docker-Host Zugriff auf den
 Quellcode hat. Einfacher: Image bauen + zur Registry pushen
-(`build_docker.bat` + `deploy_docker.bat`, siehe oben) und in Dockge
+(`build_docker.bat` + `deploy_docker.bat`, siehe oben) und in einer Docker-Oberfläche (z. B. Portainer, Dockge)
 `docker-compose.dockge.yml` als Stack einfügen – die nutzt bereits
 `image: <registry>/handpack:<tag>` statt `build: .`, kein Quellcode auf
 dem Server nötig. `<REGISTRY>`/`<TAG>` bzw. die Beispielwerte im File an
 die eigene Registry-Adresse anpassen.
 
-### GPU-Passthrough (Unraid)
+### GPU-Passthrough
 In `docker-compose.yml` auskommentiert vorbereitet für:
-- **NVIDIA** – braucht `nvidia-container-toolkit` auf dem Unraid-Host;
+- **NVIDIA** – braucht `nvidia-container-toolkit` auf dem Docker-Host;
   GPU-UUID ermitteln mit `nvidia-smi -L`, per `device_ids` anpinnen
   (auch MIG-Instanzen unterstützt)
 - **AMD / Intel** – Passthrough einzelner `/dev/dri/renderDXXX`-Nodes;
