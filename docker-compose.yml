@@ -1,0 +1,88 @@
+services:
+  handpack:
+    build: .
+    ports:
+      - "6080:6080"        # noVNC (browser access)
+    environment:
+      - RESOLUTION=1280x800  # e.g. 1920x1080 or 1600x900
+      # GPU encoder selection in the app – pick the encoder matching your GPU:
+      #   hevc_nvenc  → NVIDIA  (requires NVIDIA section below)
+      #   hevc_amf    → AMD     (requires AMD/Intel section below + LIBVA_DRIVER_NAME)
+      #   hevc_qsv    → Intel   (requires AMD/Intel section below + LIBVA_DRIVER_NAME)
+      #
+      # VAAPI driver for AMD / Intel (not needed for NVIDIA):
+      # - LIBVA_DRIVER_NAME=radeonsi   # AMD RX / Vega / RDNA
+      # - LIBVA_DRIVER_NAME=i965       # Intel Gen 8–9 (Broadwell–Skylake)
+      # - LIBVA_DRIVER_NAME=iHD        # Intel Gen 9+ (Kaby Lake and newer, incl. Arc)
+    volumes:
+      - ./input:/input     # input files
+      - ./output:/output   # encoded output files
+      # Persist app settings (target/CRF/encoder/audio/video mode, language,
+      # tool paths, ...) across container recreation/image updates. The app
+      # runs as root in the container, so QSettings writes to /root/.config.
+      - ./config:/root/.config/Kristian
+      #- /mnt/user/Filme:/input/filme     # input files
+      #- /mnt/user/Serien:/input/serien     # input files
+      #- /mnt/user/Downloads:/input/downloads     # input files
+      #- /mnt/user/Downloads/_handpack_output:/output   # encoded output files
+    restart: unless-stopped
+    shm_size: 256mb        # Qt requires /dev/shm
+
+    # -------------------------------------------------------------------------
+    # GPU passthrough (Unraid) – uncomment the relevant section to enable.
+    #
+    # Identify your GPUs via the Unraid terminal:
+    #   NVIDIA : nvidia-smi -L
+    #            → lists "GPU 0: ... (UUID: GPU-xxxxxxxx-...)"
+    #   AMD/Intel: ls -la /dev/dri/
+    #            → lists renderD128, renderD129, card0, card1, ...
+    # -------------------------------------------------------------------------
+
+    # NVIDIA (requires nvidia-container-toolkit on the Unraid host)
+    # Use device_ids to pin a specific GPU when multiple are present.
+    # Find UUIDs with: nvidia-smi -L
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           device_ids: ["GPU-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"]  # single GPU
+    #           capabilities: [gpu, video]
+    # For MIG instances (A100/H100) use the MIG device UUID instead:
+    #         - driver: nvidia
+    #           device_ids: ["MIG-GPU-xxxxxxxx-.../..."]
+    #           capabilities: [gpu, video]
+    # To allow all GPUs (no pinning):
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu, video]
+
+    # AMD / Intel (device passthrough via /dev)
+    # List available render nodes with: ls /dev/dri/
+    # renderD128 = first GPU, renderD129 = second GPU, etc.
+    # devices:
+    #   - /dev/dri/renderD128:/dev/dri/renderD128   # first GPU
+    #   - /dev/dri/card0:/dev/dri/card0             # display node (if needed)
+    # To pass through a second GPU as well:
+    #   - /dev/dri/renderD129:/dev/dri/renderD129
+    #   - /dev/dri/card1:/dev/dri/card1
+    # group_add:
+    #   - video                 # container user needs access to /dev/dri
+
+    # Intel SR-IOV (Arc / Gen12+ iGPU with SR-IOV enabled in Unraid)
+    # SR-IOV creates Virtual Functions (VFs) from the physical GPU (PF).
+    # PF = renderD128 / card0, VFs start at renderD129 / card1.
+    # Each container should receive its own VF — never share a VF between containers.
+    #
+    # Enable SR-IOV on Unraid: Settings → Intel GPU TOP (Community Apps)
+    # or load the driver manually: echo 2 > /sys/bus/pci/devices/<BDF>/sriov_numvfs
+    # List VFs: ls -la /dev/dri/  →  renderD128 (PF), renderD129+ (VFs)
+    #
+    # Assign VF 1 to this container (renderD129 = first VF):
+    # devices:
+    #   - /dev/dri/renderD129:/dev/dri/renderD128   # map VF as renderD128 inside
+    #   - /dev/dri/card1:/dev/dri/card0
+    # environment:
+    #   - LIBVA_DRIVER_NAME=iHD                     # Intel Media Driver (Gen9+)
+    # group_add:
+    #   - video

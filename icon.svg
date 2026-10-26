@@ -1,0 +1,89 @@
+<!--
+ICON GENERATION PROMPT (HandPack)
+
+Konzept: Drei konzentrische Filmstreifen-Rahmen, vertikal ausgerichtet (Perforationen
+links/rechts), alle an der unteren linken Ecke verankert. Der größte Rahmen ist oben-rechts
+und nahezu transparent, der kleinste ist unten-links und solide. Erzeugt den visuellen
+Eindruck eines schrumpfenden/komprimierten Films.
+
+Radius-Hierarchie (kohärentes Designsystem):
+  rx=16  – Außen-Ecken des App-Icons (200×200px)
+  rx=9   – Innen-Fenster des Filmrahmens ("Motiv")
+  rx=5   – Außen-Ecken der Filmrahmen-Streifen (proportional zu Streifenbreite wie Perfs)
+  rx=2   – Perforationslöcher (8×8px)
+
+Ebenen:
+  Outer echo  – Rahmen (20,20)→(176,178), Streifenbreite 24px, opacity 0.14
+  Middle echo – Rahmen (20,60)→(146,178), Streifenbreite 20px, opacity 0.32
+  Inner solid – Rahmen (20,88)→(116,178), Streifenbreite 16px, opacity 1.0
+
+Farben: Hintergrund #111827 (dark), Filmstreifen #00c8aa (teal), Perfs #111827
+Filmrahmen als even-odd-Pfad (Außenform minus Innenfenster = Rahmen mit Loch).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="16" fill="#111827"/>
+
+  <!-- outer echo 14% -->
+  <g opacity="0.14">
+    <path fill-rule="evenodd" fill="#00c8aa" d="
+      M 26,20 L 170,20 Q 176,20 176,26 L 176,172 Q 176,178 170,178 L 26,178 Q 20,178 20,172 L 20,26 Q 20,20 26,20 Z
+      M 53,44 L 143,44 Q 152,44 152,53 L 152,145 Q 152,154 143,154 L 53,154 Q 44,154 44,145 L 44,53 Q 44,44 53,44 Z
+    "/>
+    <rect x="26" y="26"  width="12" height="12" rx="2" fill="#111827"/>
+    <rect x="26" y="44"  width="12" height="12" rx="2" fill="#111827"/>
+    <rect x="26" y="62"  width="12" height="12" rx="2" fill="#111827"/>
+    <rect x="26" y="80"  width="12" height="12" rx="2" fill="#111827"/>
+    <rect x="26" y="98"  width="12" height="12" rx="2" fill="#111827"/>
+    <rect x="26" y="116" width="12" height="12" rx="2" fill="#111827"/>
+    <rect x="26" y="134" width="12" height="12" rx="2" fill="#111827"/>
+    <rect x="154" y="26"  width="12" height="12" rx="2" fill="#111827"/>
+    <rect x="154" y="44"  width="12" height="12" rx="2" fill="#111827"/>
+    <rect x="154" y="62"  width="12" height="12" rx="2" fill="#111827"/>
+    <rect x="154" y="80"  width="12" height="12" rx="2" fill="#111827"/>
+    <rect x="154" y="98"  width="12" height="12" rx="2" fill="#111827"/>
+    <rect x="154" y="116" width="12" height="12" rx="2" fill="#111827"/>
+    <rect x="154" y="134" width="12" height="12" rx="2" fill="#111827"/>
+  </g>
+
+  <!-- middle echo 32% -->
+  <g opacity="0.32">
+    <path fill-rule="evenodd" fill="#00c8aa" d="
+      M 25,60 L 141,60 Q 146,60 146,65 L 146,173 Q 146,178 141,178 L 25,178 Q 20,178 20,173 L 20,65 Q 20,60 25,60 Z
+      M 49,76 L 117,76 Q 126,76 126,85 L 126,153 Q 126,162 117,162 L 49,162 Q 40,162 40,153 L 40,85 Q 40,76 49,76 Z
+    "/>
+    <rect x="23" y="64"  width="10" height="10" rx="2" fill="#111827"/>
+    <rect x="23" y="80"  width="10" height="10" rx="2" fill="#111827"/>
+    <rect x="23" y="96"  width="10" height="10" rx="2" fill="#111827"/>
+    <rect x="23" y="112" width="10" height="10" rx="2" fill="#111827"/>
+    <rect x="23" y="128" width="10" height="10" rx="2" fill="#111827"/>
+    <rect x="23" y="144" width="10" height="10" rx="2" fill="#111827"/>
+    <rect x="23" y="160" width="10" height="10" rx="2" fill="#111827"/>
+    <rect x="133" y="64"  width="10" height="10" rx="2" fill="#111827"/>
+    <rect x="133" y="80"  width="10" height="10" rx="2" fill="#111827"/>
+    <rect x="133" y="96"  width="10" height="10" rx="2" fill="#111827"/>
+    <rect x="133" y="112" width="10" height="10" rx="2" fill="#111827"/>
+    <rect x="133" y="128" width="10" height="10" rx="2" fill="#111827"/>
+    <rect x="133" y="144" width="10" height="10" rx="2" fill="#111827"/>
+    <rect x="133" y="160" width="10" height="10" rx="2" fill="#111827"/>
+  </g>
+
+  <!-- inner solid 100% -->
+  <path fill-rule="evenodd" fill="#00c8aa" d="
+    M 25,88 L 111,88 Q 116,88 116,93 L 116,173 Q 116,178 111,178 L 25,178 Q 20,178 20,173 L 20,93 Q 20,88 25,88 Z
+    M 45,100 L 91,100 Q 100,100 100,109 L 100,157 Q 100,166 91,166 L 45,166 Q 36,166 36,157 L 36,109 Q 36,100 45,100 Z
+  "/>
+  <rect x="24" y="92"  width="8" height="8" rx="2" fill="#111827"/>
+  <rect x="24" y="104" width="8" height="8" rx="2" fill="#111827"/>
+  <rect x="24" y="116" width="8" height="8" rx="2" fill="#111827"/>
+  <rect x="24" y="128" width="8" height="8" rx="2" fill="#111827"/>
+  <rect x="24" y="140" width="8" height="8" rx="2" fill="#111827"/>
+  <rect x="24" y="152" width="8" height="8" rx="2" fill="#111827"/>
+  <rect x="24" y="164" width="8" height="8" rx="2" fill="#111827"/>
+  <rect x="104" y="92"  width="8" height="8" rx="2" fill="#111827"/>
+  <rect x="104" y="104" width="8" height="8" rx="2" fill="#111827"/>
+  <rect x="104" y="116" width="8" height="8" rx="2" fill="#111827"/>
+  <rect x="104" y="128" width="8" height="8" rx="2" fill="#111827"/>
+  <rect x="104" y="140" width="8" height="8" rx="2" fill="#111827"/>
+  <rect x="104" y="152" width="8" height="8" rx="2" fill="#111827"/>
+  <rect x="104" y="164" width="8" height="8" rx="2" fill="#111827"/>
+</svg>

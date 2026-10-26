@@ -1,0 +1,38 @@
+# Private Docker-Registry fuer Dockge auf Unraid.
+# Nimmt gepushte Images entgegen (siehe build_docker.bat <namespace> <registry-host:port>).
+#
+# WICHTIG: Diese Registry laeuft ohne TLS (reines HTTP). Jeder Docker-Client,
+# der hierher pushen/pullen soll, muss sie als "insecure-registries" eintragen:
+#   Docker Desktop -> Settings -> Docker Engine -> JSON ergaenzen:
+#     { "insecure-registries": ["<unraid-ip>:5000"] }
+#   -> Apply & Restart
+# Nur im eigenen LAN einsetzen, nicht am Internet exponieren.
+
+services:
+  registry:
+    image: registry:2
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      # Web-UI-freundliche CORS-Header (optional, z.B. fuer Registry-Browser-Tools)
+      - REGISTRY_STORAGE_DELETE_ENABLED=true   # erlaubt "docker image rm" auf der Registry
+    volumes:
+      - /mnt/user/appdata/registry/data:/var/lib/registry
+      # Optional: htpasswd-Absicherung (Basic Auth), siehe auskommentierter
+      # Abschnitt unten zum Aktivieren.
+
+    # -------------------------------------------------------------------
+    # Optionale Basic-Auth-Absicherung (empfohlen, sobald mehrere Nutzer/
+    # Geraete im LAN Zugriff haben). Vorbereitung:
+    #   1) htpasswd-Datei erzeugen (auf einer Maschine mit apache2-utils):
+    #        htpasswd -Bc /mnt/user/appdata/registry/auth/htpasswd kristian
+    #   2) Abschnitt unten einkommentieren
+    # -------------------------------------------------------------------
+    # environment:
+    #   - REGISTRY_AUTH=htpasswd
+    #   - REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm
+    #   - REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd
+    # volumes:
+    #   - /mnt/user/appdata/registry/data:/var/lib/registry
+    #   - /mnt/user/appdata/registry/auth:/auth

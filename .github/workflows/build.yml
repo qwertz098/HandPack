@@ -1,0 +1,135 @@
+name: Build HandPack (Windows / macOS arm64 / Linux AppImage)
+
+# Runs on every version tag push (v0.1, v0.2, ...) or manually via the
+# Actions tab. Each OS job builds and uploads its own artifact; native
+# packaging always has to run on the target OS — PyInstaller does not
+# cross-compile, so this can't be done from a single Windows machine.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch: {}
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-build.txt
+      - name: Read version
+        id: ver
+        shell: bash
+        run: |
+          python -c "from version import APP_NAME,VERSION; print(f'name={APP_NAME.lower()}-{VERSION}')" >> "$GITHUB_OUTPUT"
+      - name: Generate icon.ico
+        run: python make_icon.py
+      - name: Build EXE
+        run: >
+          pyinstaller --noconfirm --clean
+          --name "${{ steps.ver.outputs.name }}"
+          --windowed --onefile
+          --icon "icon.ico"
+          --add-data "icon.svg;."
+          --add-data "README.md;."
+          --add-data "README_DE.md;."
+          main.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.ver.outputs.name }}-windows
+          path: dist/${{ steps.ver.outputs.name }}.exe
+
+  macos:
+    runs-on: macos-14   # Apple Silicon (arm64) runner
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-build.txt
+      - name: Read version
+        id: ver
+        run: |
+          python -c "from version import APP_NAME,VERSION; print(f'name={APP_NAME.lower()}-{VERSION}')" >> "$GITHUB_OUTPUT"
+      - name: Generate .icns from icon.svg
+        run: |
+          brew install librsvg
+          mkdir icon.iconset
+          for size in 16 32 64 128 256 512; do
+            rsvg-convert -w $size -h $size icon.svg -o "icon.iconset/icon_${size}x${size}.png"
+            double=$((size * 2))
+            rsvg-convert -w $double -h $double icon.svg -o "icon.iconset/icon_${size}x${size}@2x.png"
+          done
+          iconutil -c icns icon.iconset -o icon.icns
+      - name: Build app bundle
+        run: >
+          pyinstaller --noconfirm --clean
+          --name "${{ steps.ver.outputs.name }}"
+          --windowed --onefile
+          --icon "icon.icns"
+          --add-data "icon.svg:."
+          --add-data "README.md:."
+          --add-data "README_DE.md:."
+          main.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.ver.outputs.name }}-macos-arm64
+          path: dist/${{ steps.ver.outputs.name }}
+
+  linux-appimage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install system + build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y librsvg2-bin fuse libfuse2
+          python -m pip install --upgrade pip
+          pip install -r requirements-build.txt
+      - name: Read version
+        id: ver
+        run: |
+          python -c "from version import APP_NAME,VERSION; print(f'name={APP_NAME.lower()}-{VERSION}')" >> "$GITHUB_OUTPUT"
+      - name: Build PyInstaller onefile binary
+        run: >
+          pyinstaller --noconfirm --clean
+          --name "${{ steps.ver.outputs.name }}"
+          --add-data "icon.svg:."
+          --add-data "README.md:."
+          --add-data "README_DE.md:."
+          main.py
+      - name: Assemble AppDir
+        run: |
+          APP=${{ steps.ver.outputs.name }}
+          mkdir -p AppDir/usr/bin
+          cp -r dist/$APP/* AppDir/usr/bin/
+          rsvg-convert -w 256 -h 256 icon.svg -o AppDir/handpack.png
+          cat > AppDir/handpack.desktop <<EOF
+          [Desktop Entry]
+          Type=Application
+          Name=HandPack
+          Exec=$APP
+          Icon=handpack
+          Categories=AudioVideo;
+          EOF
+      - name: Download appimagetool
+        run: |
+          curl -fsSL -o appimagetool \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+      - name: Build AppImage
+        run: ./appimagetool --appimage-extract-and-run AppDir "${{ steps.ver.outputs.name }}-x86_64.AppImage"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.ver.outputs.name }}-linux-appimage
+          path: ${{ steps.ver.outputs.name }}-x86_64.AppImage

@@ -1,0 +1,29 @@
+# Python-Umgebungen (im Image via requirements.txt neu installiert)
+.venv/
+.venv-build/
+__pycache__/
+*.pyc
+
+# Windows-Build-Artefakte
+build/
+dist/
+*.spec
+.tools/
+icon.ico
+
+# Test-/Sample-Videos, App-Volumes
+.samples/
+input/
+output/
+*.mkv
+*.mp4
+*.m4v
+*.mov
+*.avi
+*.ts
+*.m2ts
+
+# Sonstiges
+.git/
+.gitignore
+*.log

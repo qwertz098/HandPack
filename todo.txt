@@ -1,0 +1,2 @@
+- crop aktivieren bei manuellen einstellungen
+- tool install / update aktivitäten in log fenster inkl. ausgabe versionsinfo
