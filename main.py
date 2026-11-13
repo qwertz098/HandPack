@@ -11,6 +11,7 @@ import os
 import sys
 from pathlib import Path
 
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
@@ -35,6 +36,9 @@ def main() -> None:
     # overflow into.
     if os.environ.get("HANDPACK_MAXIMIZE") == "1":
         win.showMaximized()
+        # Fallback: if the window manager came up only after the window was
+        # mapped, the first request is ignored – ask again shortly after.
+        QTimer.singleShot(2000, win.showMaximized)
     else:
         win.show()
     sys.exit(app.exec())
