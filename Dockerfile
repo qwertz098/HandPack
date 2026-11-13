@@ -102,7 +102,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN python3 -m pip install --no-cache-dir --break-system-packages -r requirements.txt
 
-COPY . .
+COPY *.py icon.svg ./
 
 # --- Supervisor config ---
 COPY docker/supervisord.conf /etc/supervisor/conf.d/handpack.conf
