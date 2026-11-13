@@ -46,6 +46,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     librsvg2-bin \
     # Virtual framebuffer + VNC
     xvfb x11vnc \
+    # Clipboard bridge: syncs X11's CLIPBOARD and PRIMARY selections, which
+    # x11vnc/noVNC exchange with the browser (copy/paste host <-> app)
+    autocutsel \
     # Lightweight window manager – Xvfb alone provides no decorations, so
     # windows (dialogs, the frame-compare/preview popups) would be
     # chromeless (no titlebar, no move/close via drag) without it.
