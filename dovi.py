@@ -83,6 +83,7 @@ def inject_and_mux(
     audio_mode: AudioMode = AudioMode.COPY,
 ) -> None:
     injected = workdir / "injected.hevc"
+    fps = mf.frame_rate if mf.frame_rate and mf.frame_rate != "0/0" else ""
     _run([dovi_tool, "inject-rpu", str(encoded_hevc), "--rpu-in", str(rpu),
           "-o", str(injected)], "RPU-Injektion")
     encoded_hevc.unlink(missing_ok=True)
@@ -95,7 +96,11 @@ def inject_and_mux(
     # Override). Sonst muss ffmpeg den finalen Mux übernehmen, da nur das
     # transcodieren kann.
     if mkvmerge and not audio_needs_transcode(mf, audio_mode):
-        cmd = [mkvmerge, "-o", str(output), str(injected)]
+        cmd = [mkvmerge, "-o", str(output)]
+        if fps:
+            # roher HEVC-Stream hat keine Zeitstempel (sonst 25 fps-Default)
+            cmd += ["--default-duration", f"0:{fps}p"]
+        cmd += [str(injected)]
         if audio_tracks:
             cmd += ["--audio-tracks", ",".join(map(str, audio_tracks))]
         else:
@@ -103,8 +108,12 @@ def inject_and_mux(
         cmd += ["--no-video", str(mf.path)]  # Audio/Subs/Attachments aus Quelle
         _run(cmd, "mkvmerge-Mux")
     else:
-        cmd = [ffmpeg, "-hide_banner", "-y",
-               "-i", str(injected), "-i", str(mf.path),
+        cmd = [ffmpeg, "-hide_banner", "-y"]
+        if fps:
+            # roher HEVC-Stream hat keine Zeitstempel -> Bildrate vorgeben,
+            # sonst "Can't write packet with unknown timestamp" im Muxer
+            cmd += ["-framerate", fps]
+        cmd += ["-i", str(injected), "-i", str(mf.path),
                "-map", "0:v:0"]
         for idx in audio_tracks:
             cmd += ["-map", f"1:{idx}"]

@@ -234,6 +234,7 @@ class EncodeWorker(QThread):
                     return
                 self.job_finished.emit(row)
             except Exception as e:  # noqa: BLE001
+                output.unlink(missing_ok=True)  # kein unabspielbarer Rest
                 if not self._stop:
                     self.job_failed.emit(row, str(e))
             finally:
