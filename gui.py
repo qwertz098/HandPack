@@ -503,7 +503,7 @@ class MainWindow(QMainWindow):
 
     def _retranslate(self) -> None:
         """Alle statischen UI-Texte auf die aktuelle Sprache aktualisieren."""
-        self.setWindowTitle(f'{t("window_title")} v{VERSION}')
+        self.setWindowTitle(t("window_title"))
         self._lbl_target.setText(t("lbl_target"))
         self._lbl_crf.setText(t("lbl_crf"))
         self._lbl_encoder.setText(t("lbl_encoder"))
