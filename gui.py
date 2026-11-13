@@ -24,6 +24,7 @@ from models import (AUDIO_BITRATES_KBPS, AUDIO_CHANNEL_OPTIONS, AUDIO_DRC_LEVELS
                     default_audio_bitrate,
                     ENCODE_PRESETS, HDRType, JobStatus, MediaFile,
                     TARGET_RESOLUTIONS, TUNE_PROFILES, VideoMode)
+import queuestore
 from probe import collect_video_files
 from settings import AppSettings
 
@@ -286,6 +287,13 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._init_audio_mode()
         self._check_tools()
+        # Dateiliste sichern/wiederherstellen (übersteht Neustart/Update)
+        self._queue_last = ""
+        self._restore_queue()
+        self._queue_timer = QTimer(self)
+        self._queue_timer.setInterval(5000)
+        self._queue_timer.timeout.connect(self._save_queue)
+        self._queue_timer.start()
 
     # ------------------------------------------------------------- UI
 
@@ -479,6 +487,9 @@ class MainWindow(QMainWindow):
         self.btn_stop = QPushButton()
         self.btn_stop.setEnabled(False)
         self.btn_stop.clicked.connect(self._stop)
+        self.btn_clear_queue = QPushButton()
+        self.btn_clear_queue.clicked.connect(self._clear_queue)
+        foot.addWidget(self.btn_clear_queue)
         foot.addWidget(self.btn_start)
         foot.addWidget(self.btn_pause)
         foot.addWidget(self.btn_stop)
@@ -528,6 +539,8 @@ class MainWindow(QMainWindow):
         self.btn_start.setText(t("btn_start"))
         self.btn_pause.setText(t("btn_resume") if self._is_paused() else t("btn_pause"))
         self.btn_stop.setText(t("btn_stop"))
+        self.btn_clear_queue.setText(t("btn_clear_queue"))
+        self.btn_clear_queue.setToolTip(t("tt_clear_queue"))
         # Encoder-Suche-Platzhalter (wenn noch nicht erkannt)
         if not self.cmb_encoder.isEnabled() and self.cmb_encoder.count() == 1:
             self.cmb_encoder.setItemText(0, t("encoder_searching"))
@@ -898,6 +911,40 @@ class MainWindow(QMainWindow):
 
         sig.done.connect(_on_done)
         self.pool.start(job)
+
+    def _save_queue(self) -> None:
+        """Schreibt die aktuelle Liste (nur bei Änderung) in die Sicherungsdatei."""
+        files = [mf for mf in self.files if mf and mf.status != JobStatus.SKIPPED]
+        pending = [self.row_paths[r] for r, mf in enumerate(self.files)
+                   if mf is None and not self.table.isRowHidden(r)]
+        try:
+            text = queuestore.dumps(files, pending)
+            if text != self._queue_last:
+                queuestore.save(text)
+                self._queue_last = text
+        except OSError:
+            pass  # Sicherung ist optional
+
+    def _restore_queue(self) -> None:
+        """Stellt die gesicherte Liste wieder her. Zeilen, die beim Beenden
+        liefen oder warteten, stehen wieder als bereit in der Liste."""
+        files, pending = queuestore.load()
+        for mf in files:
+            if not mf.path.exists():
+                continue
+            prev = mf.status
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            self.files.append(mf)
+            self.row_paths.append(mf.path)
+            mf.progress = 0.0
+            self._fill_row(row, mf)
+            if prev in (JobStatus.DONE, JobStatus.ERROR):
+                mf.status = prev
+                self.table.item(row, COL_STATUS).setText(status_t(prev))
+        pending = [p for p in pending if p.exists()]
+        if pending:
+            self._scan_done(pending)
 
     def _scan_done(self, videos: list[Path]) -> None:
         self.drop.setEnabled(True)
@@ -1816,6 +1863,21 @@ class MainWindow(QMainWindow):
         self.files[row] = None
         self.table.setRowHidden(row, True)
 
+    def _clear_queue(self) -> None:
+        """Entfernt alle Einträge außer dem laufenden Job (und Dateien, die
+        noch analysiert werden – deren Zeile bekommt später noch Signale)."""
+        rows = [r for r, mf in enumerate(self.files)
+                if mf and mf.status != JobStatus.RUNNING]
+        if not rows:
+            return
+        if QMessageBox.question(
+                self, t("dlg_clear_queue_title"),
+                t("dlg_clear_queue_text", n=len(rows))) != QMessageBox.Yes:
+            return
+        for r in rows:
+            self._remove_row(r)
+        self._save_queue()
+
     # ------------------------------------------------------- Encoding
 
     def _start(self) -> None:
@@ -2026,6 +2088,7 @@ class MainWindow(QMainWindow):
             self._tick_time()
 
     def closeEvent(self, event) -> None:
+        self._save_queue()
         worker = self.encode_worker
         if worker is not None and worker.is_busy():
             mb = QMessageBox(self)

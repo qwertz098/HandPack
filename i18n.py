@@ -68,6 +68,10 @@ _DE: dict[str, str] = {
     "tt_pause_unsupported": ("Pause ist unter Windows nicht verfügbar "
                              "(kein SIGSTOP-Äquivalent für Prozesse)"),
     "btn_stop": "Stop",
+    "btn_clear_queue": "Liste leeren",
+    "tt_clear_queue": "Alle Einträge aus der Liste entfernen (laufender Job bleibt)",
+    "dlg_clear_queue_title": "Liste leeren",
+    "dlg_clear_queue_text": "{n} Einträge aus der Liste entfernen?",
     # Tool-Status
     "tools_ok": "Alle Tools gefunden.",
     "tools_missing": "FEHLT: {names}",
@@ -324,6 +328,10 @@ _EN: dict[str, str] = {
     "tt_pause_unsupported": ("Pause isn't available on Windows "
                              "(no SIGSTOP equivalent for processes)"),
     "btn_stop": "Stop",
+    "btn_clear_queue": "Clear list",
+    "tt_clear_queue": "Remove all entries from the list (a running job stays)",
+    "dlg_clear_queue_title": "Clear list",
+    "dlg_clear_queue_text": "Remove {n} entries from the list?",
     "tools_ok": "All tools found.",
     "tools_missing": "MISSING: {names}",
     "tools_no_dovi": "dovi_tool missing → DV files will be encoded as HDR10.",
