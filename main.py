@@ -8,6 +8,7 @@ Externe Tools (im PATH oder an üblichen Orten):
     mkvmerge (MKVToolNix)    – bevorzugter Muxer bei DV (sonst ffmpeg-Fallback)
 """
 import os
+import signal
 import sys
 from pathlib import Path
 
@@ -41,6 +42,20 @@ def main() -> None:
         QTimer.singleShot(2000, win.showMaximized)
     else:
         win.show()
+
+    # Graceful shutdown: `docker stop` / supervisor send SIGTERM. Without a
+    # handler Python dies immediately (no closeEvent, no final save). The
+    # no-op timer is needed so the Python-level handler gets to run while Qt's
+    # C++ event loop is blocking.
+    def _on_signal(signum, frame) -> None:
+        win.shutdown()
+        app.quit()
+
+    signal.signal(signal.SIGTERM, _on_signal)
+    signal.signal(signal.SIGINT, _on_signal)
+    keepalive = QTimer()
+    keepalive.start(200)
+    keepalive.timeout.connect(lambda: None)
     sys.exit(app.exec())
 
 

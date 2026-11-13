@@ -2087,6 +2087,22 @@ class MainWindow(QMainWindow):
             self._timer.stop()
             self._tick_time()
 
+    def shutdown(self) -> None:
+        """Sauberer Abschluss ohne Rückfrage (SIGTERM, z. B. docker stop):
+        Liste und Einstellungen sichern, laufenden ffmpeg beenden und dessen
+        unvollständige Ausgabedatei löschen."""
+        self._save_queue()
+        self.settings.qs.sync()
+        worker = self.encode_worker
+        if worker is not None:
+            worker.resume()  # sonst bliebe ein pausierter Prozess hängen
+            worker.stop()
+            worker.wait(3000)
+            self.encode_worker = None
+        for mf in self.files:
+            if mf and mf.status == JobStatus.RUNNING and mf.output_path:
+                mf.output_path.unlink(missing_ok=True)
+
     def closeEvent(self, event) -> None:
         self._save_queue()
         worker = self.encode_worker
