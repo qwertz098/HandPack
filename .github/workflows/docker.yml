@@ -8,6 +8,11 @@ on:
     tags: ["v*"]
   workflow_dispatch: {}
 
+# Run JavaScript actions on Node 24 (current LTS) even if an action still
+# declares an older runtime.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -15,7 +20,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
         with:

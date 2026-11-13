@@ -9,12 +9,17 @@ on:
     tags: ["v*"]
   workflow_dispatch: {}
 
+# Run JavaScript actions on Node 24 (current LTS) even if an action still
+# declares an older runtime.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - name: Install build dependencies
@@ -38,7 +43,7 @@ jobs:
           --add-data "README.md;."
           --add-data "README_DE.md;."
           main.py
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.ver.outputs.name }}-windows
           path: dist/${{ steps.ver.outputs.name }}.exe
@@ -46,8 +51,8 @@ jobs:
   macos:
     runs-on: macos-14   # Apple Silicon (arm64) runner
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - name: Install build dependencies
@@ -78,7 +83,7 @@ jobs:
           --add-data "README.md:."
           --add-data "README_DE.md:."
           main.py
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.ver.outputs.name }}-macos-arm64
           path: dist/${{ steps.ver.outputs.name }}
@@ -86,8 +91,8 @@ jobs:
   linux-appimage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - name: Install system + build dependencies
@@ -129,7 +134,7 @@ jobs:
           chmod +x appimagetool
       - name: Build AppImage
         run: ./appimagetool --appimage-extract-and-run AppDir "${{ steps.ver.outputs.name }}-x86_64.AppImage"
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.ver.outputs.name }}-linux-appimage
           path: ${{ steps.ver.outputs.name }}-x86_64.AppImage
