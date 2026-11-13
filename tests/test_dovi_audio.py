@@ -43,7 +43,8 @@ def test_transcode_needed_uses_ffmpeg_mux_with_real_audio_conversion(monkeypatch
     assert mux_cmd[0] == "ffmpeg"
     assert "-c:a:0" in mux_cmd
     assert mux_cmd[mux_cmd.index("-c:a:0") + 1] == "ac3"
-    assert not any(c[0] == "mkvmerge" for c in calls)
+    # mkvmerge darf hier nur das Video verpacken, nicht das Quell-Audio kopieren
+    assert not any("--no-video" in c for c in calls)
 
 
 def test_copy_mode_still_uses_fast_mkvmerge_path(monkeypatch, tmp_path):
@@ -81,3 +82,20 @@ def test_no_mkvmerge_available_falls_back_to_ffmpeg_regardless_of_audio_mode(mon
 
     mux_cmd = calls[-1]
     assert mux_cmd[0] == "ffmpeg"
+
+
+def test_ffmpeg_mux_never_reads_raw_hevc_directly(monkeypatch, tmp_path):
+    """Roher HEVC (B-Frames, keine Zeitstempel) darf nicht direkt in MKV
+    gemuxt werden - erst Zwischen-Container (mkvmerge, sonst MP4)."""
+    mf = make_mf(codec="dts")
+    mf.frame_rate = "24000/1001"
+    calls = run_inject_and_mux(monkeypatch, tmp_path, mf, AudioMode.AC3)
+    assert calls[-2][0] == "mkvmerge"
+    assert "0:24000/1001p" in calls[-2]
+    final = calls[-1]
+    assert str(tmp_path / "video.mkv") in final
+    assert not any(str(a).endswith("injected.hevc") for a in final)
+
+    calls = run_inject_and_mux(monkeypatch, tmp_path, mf, AudioMode.AC3, mkvmerge=None)
+    assert calls[-2][0] == "ffmpeg" and "-framerate" in calls[-2]
+    assert str(tmp_path / "video.mp4") in calls[-1]

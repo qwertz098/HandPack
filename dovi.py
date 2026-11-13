@@ -95,12 +95,9 @@ def inject_and_mux(
     # normalen Encode: global_mode/Override, Codec-Match, Kanal-/DRC-
     # Override). Sonst muss ffmpeg den finalen Mux übernehmen, da nur das
     # transcodieren kann.
+    dd = ["--default-duration", f"0:{fps}p"] if fps else []
     if mkvmerge and not audio_needs_transcode(mf, audio_mode):
-        cmd = [mkvmerge, "-o", str(output)]
-        if fps:
-            # roher HEVC-Stream hat keine Zeitstempel (sonst 25 fps-Default)
-            cmd += ["--default-duration", f"0:{fps}p"]
-        cmd += [str(injected)]
+        cmd = [mkvmerge, "-o", str(output)] + dd + [str(injected)]
         if audio_tracks:
             cmd += ["--audio-tracks", ",".join(map(str, audio_tracks))]
         else:
@@ -108,12 +105,25 @@ def inject_and_mux(
         cmd += ["--no-video", str(mf.path)]  # Audio/Subs/Attachments aus Quelle
         _run(cmd, "mkvmerge-Mux")
     else:
-        cmd = [ffmpeg, "-hide_banner", "-y"]
-        if fps:
-            # roher HEVC-Stream hat keine Zeitstempel -> Bildrate vorgeben,
-            # sonst "Can't write packet with unknown timestamp" im Muxer
-            cmd += ["-framerate", fps]
-        cmd += ["-i", str(injected), "-i", str(mf.path),
+        # Der rohe HEVC-Stream hat keine Zeitstempel. ffmpeg kann ihn mit
+        # B-Frames nicht direkt in MKV schreiben ("Can't write packet with
+        # unknown timestamp"), auch nicht mit -framerate/-fflags +genpts.
+        # Deshalb erst in einen Container mit Zeitstempeln packen (mkvmerge,
+        # sonst MP4 per ffmpeg) und diesen mit dem Audio zusammenführen.
+        if mkvmerge:
+            video = workdir / "video.mkv"
+            _run([mkvmerge, "-o", str(video)] + dd + [str(injected)],
+                 "mkvmerge-Video-Mux")
+        else:
+            video = workdir / "video.mp4"
+            cmd = [ffmpeg, "-hide_banner", "-y"]
+            if fps:
+                cmd += ["-framerate", fps]
+            cmd += ["-i", str(injected), "-c:v", "copy", str(video)]
+            _run(cmd, "ffmpeg-Video-Mux")
+        injected.unlink(missing_ok=True)
+        cmd = [ffmpeg, "-hide_banner", "-y",
+               "-i", str(video), "-i", str(mf.path),
                "-map", "0:v:0"]
         for idx in audio_tracks:
             cmd += ["-map", f"1:{idx}"]
@@ -121,6 +131,7 @@ def inject_and_mux(
         cmd += audio_args(mf, audio_mode)
         cmd += ["-c:s", "copy", "-c:t", "copy", str(output)]
         _run(cmd, "ffmpeg-Mux")
+        video.unlink(missing_ok=True)
     injected.unlink(missing_ok=True)
 
 
