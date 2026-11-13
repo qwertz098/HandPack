@@ -4,6 +4,8 @@ rem  HandPack - Docker Image Build (Windows)
 rem  Baut das Linux-Container-Image (ffmpeg + noVNC-GUI) und taggt es
 rem  lokal mit Name + Version aus version.py. Fertige Images gibt es
 rem  unter ghcr.io/qwertz098/handpack.
+rem  Gebaut wird immer der neueste Stand von GitHub (frischer Klon in %TEMP%),
+rem  nicht der lokale Ordner - so landen keine lokalen Dateien im Image.
 rem =====================================================================
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
@@ -29,6 +31,28 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+
+rem --- Git verfuegbar? ---
+git --version >nul 2>&1
+if errorlevel 1 (
+    echo FEHLER: Git wurde nicht gefunden. Bitte Git for Windows installieren.
+    pause
+    exit /b 1
+)
+
+rem --- Neuesten Code von GitHub holen (frischer Klon in %TEMP%) ---
+set "REPO_URL=https://github.com/qwertz098/HandPack.git"
+set "SRC=%TEMP%\handpack_build_src"
+if exist "%SRC%" rmdir /s /q "%SRC%"
+echo.
+echo Hole neuesten Code von %REPO_URL% ...
+git clone --depth 1 "%REPO_URL%" "%SRC%"
+if errorlevel 1 (
+    echo FEHLER: git clone fehlgeschlagen.
+    pause
+    exit /b 1
+)
+cd /d "%SRC%"
 
 rem --- Version aus version.py lesen ---
 %PY% -c "from version import APP_NAME,VERSION; open('_ver.tmp','w').write(APP_NAME.lower()+'|'+VERSION)"
@@ -70,6 +94,10 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+
+echo.
+cd /d "%~dp0"
+rmdir /s /q "%SRC%"
 
 echo.
 echo Fertig: %TAG_VER%  (auch getaggt als %TAG_LATEST%)
