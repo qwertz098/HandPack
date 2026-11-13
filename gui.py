@@ -27,6 +27,7 @@ from models import (AUDIO_BITRATES_KBPS, AUDIO_CHANNEL_OPTIONS, AUDIO_DRC_LEVELS
 import queuestore
 from probe import collect_video_files
 from settings import AppSettings
+from version import VERSION
 
 
 # Reihenfolge bewusst an die Toolbar angeglichen (Ziel/CRF/Encoder/Preset/
@@ -479,6 +480,9 @@ class MainWindow(QMainWindow):
         self.lbl_time = QLabel("")
         self.lbl_time.setVisible(False)
         foot.addWidget(self.lbl_time)
+        lbl_version = QLabel(f"v{VERSION}")
+        lbl_version.setStyleSheet("color: gray;")
+        foot.addWidget(lbl_version)
         self.btn_start = QPushButton()
         self.btn_start.clicked.connect(self._start)
         self.btn_pause = QPushButton()
@@ -499,7 +503,7 @@ class MainWindow(QMainWindow):
 
     def _retranslate(self) -> None:
         """Alle statischen UI-Texte auf die aktuelle Sprache aktualisieren."""
-        self.setWindowTitle(t("window_title"))
+        self.setWindowTitle(f'{t("window_title")} v{VERSION}')
         self._lbl_target.setText(t("lbl_target"))
         self._lbl_crf.setText(t("lbl_crf"))
         self._lbl_encoder.setText(t("lbl_encoder"))
